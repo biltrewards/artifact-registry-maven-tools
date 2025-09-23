@@ -45,7 +45,7 @@ SETTINGS_XML="
       <id>custom-repos</id>
       <repositories>
         <repository>
-          <id>central</id>
+          <id>central2</id>
           <url>https://repo.maven.apache.org/maven2</url>
         </repository>
         <repository>
@@ -55,7 +55,7 @@ SETTINGS_XML="
       </repositories>
       <pluginRepositories>
         <pluginRepository>
-          <id>central</id>
+          <id>central2</id>
           <url>https://repo.maven.apache.org/maven2</url>
         </pluginRepository>
         <pluginRepository>
