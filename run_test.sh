@@ -131,7 +131,7 @@ function run_test() {
         echo "$EXTENSIONS_XML" > $run_dir/.mvn/extensions.xml
     fi
 
-    echo "$SETTINGS_XML" > $run_dir/.mvn/settings.xml
+    echo "$SETTINGS_XML" > $run_dir/settings.xml
     cmd="$cmd -s settings.xml"
 
     if [[ -n "$MVN_IMAGE" ]]; then
