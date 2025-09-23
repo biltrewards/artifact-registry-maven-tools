@@ -9,14 +9,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  test:
+  setup:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        input:
-          - maven-100-artifacts/central
-          - maven-100-artifacts/virtual
-          - maven-100-artifacts/remote
 
     permissions:
       contents: read
@@ -32,7 +26,22 @@ jobs:
           workload_identity_provider: ${{ vars.GH_ACTIONS_GCP_WORKLOAD_IDENTITY_ID_CICD }}
           service_account: ${{ vars.GH_ACTIONS_GCP_SA_ID_CICD }}
           create_credentials_file: true
-      
+
+      - name: Build
+        run: |
+          ./gradlew build
+
+  test:
+    needs: setup
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        input:
+          - maven-100-artifacts/central
+          - maven-100-artifacts/virtual
+          - maven-100-artifacts/remote
+
+    steps:      
       - name: Run Perf Test
         run: |
           RUN_DIR=/tmp/test/${{ matrix.input }} TEST=${{ matrix.input }} ./test/run.sh
