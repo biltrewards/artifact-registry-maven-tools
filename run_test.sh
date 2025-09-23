@@ -122,18 +122,17 @@ function run_test() {
     repo_dir=$run_dir/_repo
     cmd="mvn $MVN_ACTION -B -Dmaven.test.skip=true $MVN_FLAGS"
 
-    touch $run_dir/settings.xml
+    mkdir -p $run_dir/.mvn        
 
     if [[ -n "$REPO_URL" ]]; then        
         echo "Building wagon..."
         (cd $SCRIPT_DIR && ./gradlew publishToMavenLocal -Dmaven.repo.local="$repo_dir")
 
-        mkdir -p $run_dir/.mvn
         echo "$EXTENSIONS_XML" > $run_dir/.mvn/extensions.xml
-
-        echo "$SETTINGS_XML" > $run_dir/settings.xml
-        cmd="$cmd -s settings.xml"
     fi
+
+    echo "$SETTINGS_XML" > $run_dir/.mvn/settings.xml
+    cmd="$cmd -s settings.xml"
 
     if [[ -n "$MVN_IMAGE" ]]; then
         if [[ -n "$GOOGLE_APPLICATION_CREDENTIALS" ]]; then
