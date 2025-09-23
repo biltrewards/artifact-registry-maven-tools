@@ -26,19 +26,19 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@v2
-        with:
-          workload_identity_provider: projects/620518129011/locations/global/workloadIdentityPools/bilt-rewards-prod/providers/github-provider
-          service_account: github-actions@bilt-cicd.iam.gserviceaccount.com
-          create_credentials_file: true
+      # - name: Authenticate to Google Cloud
+      #   uses: google-github-actions/auth@v2
+      #   with:
+      #     workload_identity_provider: projects/620518129011/locations/global/workloadIdentityPools/bilt-rewards-prod/providers/github-provider
+      #     service_account: github-actions@bilt-cicd.iam.gserviceaccount.com
+      #     create_credentials_file: true
 
-      - name: Set up JDK
-        uses: actions/setup-java@v4
-        with:
-          java-version: '21'
-          distribution: 'temurin'
-          cache: gradle
+      # - name: Set up JDK
+      #   uses: actions/setup-java@v4
+      #   with:
+      #     java-version: '21'
+      #     distribution: 'temurin'
+      #     cache: gradle
 
       - name: Run Perf Test
         run: |

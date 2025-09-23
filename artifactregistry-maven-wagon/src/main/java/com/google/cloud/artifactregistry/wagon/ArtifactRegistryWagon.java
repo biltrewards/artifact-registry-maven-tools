@@ -35,6 +35,9 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+
 import org.apache.maven.wagon.AbstractWagon;
 import org.apache.maven.wagon.ConnectionException;
 import org.apache.maven.wagon.ResourceDoesNotExistException;
@@ -240,12 +243,19 @@ public final class ArtifactRegistryWagon extends AbstractWagon {
     }
 
     GenericUrl constructURL(String artifactPath) {
+      // Use the new Artifact Registry download API format
       GenericUrl url = new GenericUrl();
       url.setScheme("https");
-      url.setHost(repository.getHost());
-      url.appendRawPath(repository.getBasedir());
-      url.appendRawPath("/");
-      url.appendRawPath(artifactPath);
+      url.setHost("artifactregistry.googleapis.com");
+      url.appendRawPath("/download/v1/projects/single-scholar-280421/locations/us/repositories/maven-central-cache/files/");
+      try {
+        url.appendRawPath(URLEncoder.encode(artifactPath, "UTF-8"));
+      } catch (UnsupportedEncodingException e) {
+        // UTF-8 is always supported, this should never happen
+        throw new RuntimeException("UTF-8 encoding not supported", e);
+      }
+      url.appendRawPath(":download");
+      url.set("alt", "media");
       return url;
     }
   }

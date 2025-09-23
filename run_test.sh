@@ -64,6 +64,45 @@ SETTINGS_XML="
 </settings>
 "
 
+FALLBACK_SETTINGS_XML="
+<?xml version='1.0' encoding='UTF-8'?>
+<settings xmlns='http://maven.apache.org/SETTINGS/1.0.0'
+          xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance'
+          xsi:schemaLocation='http://maven.apache.org/SETTINGS/1.0.0 
+                              http://maven.apache.org/xsd/settings-1.0.0.xsd'>
+
+  <profiles>
+    <profile>
+      <id>custom-repos</id>
+      <repositories>
+        <repository>
+          <id>custom</id>
+          <url>$REPO_URL</url>
+        </repository>
+        <repository>
+          <id>custom2</id>
+          <url>artifactregistry://us-maven.pkg.dev/single-scholar-280421/maven-central-cache</url>
+        </repository>
+      </repositories>
+      <pluginRepositories>
+        <pluginRepository>
+          <id>custom</id>
+          <url>$REPO_URL</url>
+        </pluginRepository>
+        <pluginRepository>
+          <id>custom2</id>
+          <url>artifactregistry://us-maven.pkg.dev/single-scholar-280421/maven-central-cache</url>
+        </pluginRepository>
+      </pluginRepositories>
+    </profile>
+  </profiles>
+
+  <activeProfiles>
+    <activeProfile>custom-repos</activeProfile>
+  </activeProfiles>
+</settings>
+"
+
 ###########################################################################
 ##### END CONFIG
 ###########################################################################
