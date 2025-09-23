@@ -23,8 +23,8 @@ jobs:
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
         with:
-          workload_identity_provider: ${{ vars.GH_ACTIONS_GCP_WORKLOAD_IDENTITY_ID_CICD }}
-          service_account: ${{ vars.GH_ACTIONS_GCP_SA_ID_CICD }}
+          workload_identity_provider: projects/620518129011/locations/global/workloadIdentityPools/bilt-rewards-prod/providers/github-provider
+          service_account: github-actions@bilt-cicd.iam.gserviceaccount.com
           create_credentials_file: true
 
       - name: Build
