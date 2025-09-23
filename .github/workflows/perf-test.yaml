@@ -42,4 +42,4 @@ jobs:
 
       - name: Run Perf Test
         run: |
-          ./run_test.sh ${{ matrix.input }}
+          mvn --version

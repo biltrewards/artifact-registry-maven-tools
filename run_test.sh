@@ -10,7 +10,7 @@ SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
 TEST_DIR=$1
 
-REPO_URL=artifactregistry://us-maven.pkg.dev/single-scholar-280421/bilt-private-and-maven-central
+REPO_URL=${REPO_URL:-artifactregistry://us-maven.pkg.dev/single-scholar-280421/bilt-private-and-maven-central}
 
 # MVN_IMAGE=maven:3.9.11-eclipse-temurin-21-alpine
 # 3.8.7-eclipse-temurin-17-alpine
@@ -45,13 +45,13 @@ SETTINGS_XML="
       <id>custom-repos</id>
       <repositories>
         <repository>
-          <id>virtual</id>
+          <id>custom</id>
           <url>$REPO_URL</url>
         </repository>
       </repositories>
       <pluginRepositories>
         <pluginRepository>
-          <id>virtual</id>
+          <id>custom</id>
           <url>$REPO_URL</url>
         </pluginRepository>
       </pluginRepositories>
