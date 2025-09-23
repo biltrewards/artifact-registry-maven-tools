@@ -1,0 +1,45 @@
+name: Perf Test
+
+on:
+  pull_request:
+
+# Cancel an in-progress run if a new run is started for the same PR or commit.
+concurrency:
+  group: "${{ github.workflow }} @ ${{ github.event.pull_request.number }}"
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        input:
+          - tests/maven-0-artifacts
+          - tests/quarkus-starter
+          - tests/payment-svc
+
+    permissions:
+      contents: read
+      id-token: write  # required for google-github-actions/auth
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: projects/620518129011/locations/global/workloadIdentityPools/bilt-rewards-prod/providers/github-provider
+          service_account: github-actions@bilt-cicd.iam.gserviceaccount.com
+          create_credentials_file: true
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: gradle
+
+      - name: Run Perf Test
+        run: |
+          ./run_test.sh ${{ matrix.input }}
