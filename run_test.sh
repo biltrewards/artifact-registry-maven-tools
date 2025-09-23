@@ -46,7 +46,7 @@ SETTINGS_XML="
       <repositories>
         <repository>
           <id>central</id>
-          <url>https://repo.maven.apache.org</url>
+          <url>https://repo.maven.apache.org/maven2</url>
         </repository>
         <repository>
           <id>bilt-maven</id>
@@ -56,7 +56,7 @@ SETTINGS_XML="
       <pluginRepositories>
         <pluginRepository>
           <id>central</id>
-          <url>https://repo.maven.apache.org</url>
+          <url>https://repo.maven.apache.org/maven2</url>
         </pluginRepository>
         <pluginRepository>
           <id>bilt-maven</id>
