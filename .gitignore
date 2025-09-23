@@ -1,4 +1,6 @@
 .gradle/
 .idea/
+bin/
 build/
+target/
 local.properties
