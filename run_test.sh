@@ -10,7 +10,7 @@ SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
 TEST_DIR=$1
 
-REPO_URL=artifactregistry://us-maven.pkg.dev/single-scholar-280421/bilt-private-and-maven-central
+REPO_URL=${REPO_URL:-artifactregistry://us-maven.pkg.dev/single-scholar-280421/bilt-private-and-maven-central}
 
 # MVN_IMAGE=maven:3.9.11-eclipse-temurin-21-alpine
 # 3.8.7-eclipse-temurin-17-alpine
@@ -45,14 +45,22 @@ SETTINGS_XML="
       <id>custom-repos</id>
       <repositories>
         <repository>
-          <id>virtual</id>
-          <url>$REPO_URL</url>
+          <id>central2</id>
+          <url>artifactregistry://us-maven.pkg.dev/single-scholar-280421/maven-central-cache</url>
+        </repository>
+        <repository>
+          <id>bilt-maven</id>
+          <url>artifactregistry://us-maven.pkg.dev/single-scholar-280421/bilt-maven</url>
         </repository>
       </repositories>
       <pluginRepositories>
         <pluginRepository>
-          <id>virtual</id>
-          <url>$REPO_URL</url>
+          <id>central2</id>
+          <url>artifactregistry://us-maven.pkg.dev/single-scholar-280421/maven-central-cache</url>
+        </pluginRepository>
+        <pluginRepository>
+          <id>bilt-maven</id>
+          <url>artifactregistry://us-maven.pkg.dev/single-scholar-280421/bilt-maven</url>
         </pluginRepository>
       </pluginRepositories>
     </profile>
@@ -73,18 +81,16 @@ function run_test() {
     repo_dir=$run_dir/_repo
     cmd="mvn $MVN_ACTION -B -Dmaven.test.skip=true $MVN_FLAGS"
 
-    touch $run_dir/settings.xml
+    mkdir -p $run_dir/.mvn        
 
     if [[ -n "$REPO_URL" ]]; then        
         echo "Building wagon..."
         (cd $SCRIPT_DIR && ./gradlew publishToMavenLocal -Dmaven.repo.local="$repo_dir")
-
-        mkdir -p $run_dir/.mvn
         echo "$EXTENSIONS_XML" > $run_dir/.mvn/extensions.xml
-
-        echo "$SETTINGS_XML" > $run_dir/settings.xml
-        cmd="$cmd -s settings.xml"
     fi
+
+    echo "$SETTINGS_XML" > $run_dir/settings.xml
+    cmd="$cmd -s settings.xml"
 
     if [[ -n "$MVN_IMAGE" ]]; then
         if [[ -n "$GOOGLE_APPLICATION_CREDENTIALS" ]]; then
