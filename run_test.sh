@@ -46,7 +46,7 @@ SETTINGS_XML="
       <repositories>
         <repository>
           <id>central2</id>
-          <url>https://repo.maven.apache.org/maven2</url>
+          <url>artifactregistry://us-maven.pkg.dev/single-scholar-280421/maven-central-cache</url>
         </repository>
         <repository>
           <id>bilt-maven</id>
@@ -56,7 +56,7 @@ SETTINGS_XML="
       <pluginRepositories>
         <pluginRepository>
           <id>central2</id>
-          <url>https://repo.maven.apache.org/maven2</url>
+          <url>artifactregistry://us-maven.pkg.dev/single-scholar-280421/maven-central-cache</url>
         </pluginRepository>
         <pluginRepository>
           <id>bilt-maven</id>
