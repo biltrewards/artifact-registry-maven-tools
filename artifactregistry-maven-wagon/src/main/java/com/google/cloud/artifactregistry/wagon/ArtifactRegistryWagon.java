@@ -62,6 +62,7 @@ public final class ArtifactRegistryWagon extends AbstractWagon {
       throws TransferFailedException, ResourceDoesNotExistException, AuthorizationException {
     try {
       GenericUrl url = googleRepository.constructURL(resource.getName());
+      System.out.println(url);
       HttpRequest request = requestFactory.buildGetRequest(url);
       HttpResponse response = request.execute();
       return response.getContent();
@@ -243,7 +244,16 @@ public final class ArtifactRegistryWagon extends AbstractWagon {
     }
 
     GenericUrl constructURL(String artifactPath) {
-      // Use the new Artifact Registry download API format
+      if (artifactPath.startsWith("com/bilt/") || artifactPath.startsWith("com/biltrewards/") || artifactPath.startsWith("com/biltcard/")) {        
+        GenericUrl url = new GenericUrl();
+        url.setScheme("https");
+        url.setHost(repository.getHost());
+        url.appendRawPath("/single-scholar-280421/bilt-maven");
+        url.appendRawPath("/");
+        url.appendRawPath(artifactPath);
+        return url;
+      }
+
       GenericUrl url = new GenericUrl();
       url.setScheme("https");
       url.setHost("artifactregistry.googleapis.com");
