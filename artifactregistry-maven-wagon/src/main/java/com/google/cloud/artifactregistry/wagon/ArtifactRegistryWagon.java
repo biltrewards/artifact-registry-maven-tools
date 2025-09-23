@@ -32,9 +32,25 @@ import com.google.auth.http.HttpTransportFactory;
 import com.google.cloud.artifactregistry.auth.CredentialProvider;
 import com.google.cloud.artifactregistry.auth.DefaultCredentialProvider;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.Map;
+
 import org.apache.maven.wagon.AbstractWagon;
 import org.apache.maven.wagon.ConnectionException;
 import org.apache.maven.wagon.ResourceDoesNotExistException;
@@ -54,11 +70,20 @@ public final class ArtifactRegistryWagon extends AbstractWagon {
   private HttpTransportFactory httpTransportFactory = NetHttpTransport::new;
   private CredentialProvider credentialProvider = DefaultCredentialProvider.getInstance();
   private Credentials credentials;
+  private static final Map<String, String> sha1Cache = new ConcurrentHashMap<>();
+  private static final ExecutorService jarPrefetchExecutor = new ThreadPoolExecutor(
+      10, // core pool size
+      50, // maximum pool size
+      60L, TimeUnit.SECONDS, // keep alive time
+      new LinkedBlockingQueue<>() // work queue
+  );
+  private static final String CACHE_DIR = "/tmp/biltarwagon/";
 
   private InputStream getInputStream(Resource resource)
       throws TransferFailedException, ResourceDoesNotExistException, AuthorizationException {
     try {
       GenericUrl url = googleRepository.constructURL(resource.getName());
+      System.out.println(url);
       HttpRequest request = requestFactory.buildGetRequest(url);
       HttpResponse response = request.execute();
       return response.getContent();
@@ -117,12 +142,66 @@ public final class ArtifactRegistryWagon extends AbstractWagon {
   @Override
   public boolean getIfNewer(String resourceName, File destination, long timestamp)
       throws TransferFailedException, ResourceDoesNotExistException, AuthorizationException {
+    // Check if this is a request for a .sha1 file
+    if (resourceName.endsWith(".sha1")) {
+      String originalResource = resourceName.substring(0, resourceName.length() - 5); // Remove .sha1 suffix
+      String cachedSha1 = sha1Cache.get(originalResource);
+      if (cachedSha1 != null) {
+        // Write the cached SHA1 to the destination file
+        try (OutputStream out = new java.io.FileOutputStream(destination)) {
+          out.write(cachedSha1.getBytes("UTF-8"));
+          System.out.println("CACHE HIT SHA1: " + resourceName);
+          return true;
+        } catch (IOException e) {
+          throw new TransferFailedException("Failed to write SHA1 to destination file.", e);
+        }
+      } else {
+        System.out.println("CACHE MISS SHA1: " + resourceName);
+      }
+    }
+    
+    // Check if this is a .jar request and we have it cached
+    if (resourceName.endsWith(".jar")) {
+      File cachedJarFile = getCachedJarFile(resourceName);
+      if (cachedJarFile.exists()) {
+        try {
+          Files.copy(cachedJarFile.toPath(), destination.toPath(), StandardCopyOption.REPLACE_EXISTING);
+          System.out.println("CACHE HIT JAR: " + resourceName);
+          
+          // Ensure SHA1 is cached for this jar
+          if (!sha1Cache.containsKey(resourceName)) {
+            String sha1Hash = computeSha1(destination);
+            sha1Cache.put(resourceName, sha1Hash);
+          }
+          
+          return true;
+        } catch (IOException e) {
+          System.err.println("Failed to copy cached jar file, falling back to remote fetch: " + e.getMessage());
+          // Fall through to normal fetch
+        }
+      } else {
+        System.out.println("CACHE MISS JAR: " + resourceName);
+      }
+    }
+    
+    // If this is a .pom file, prefetch the corresponding .jar file before downloading
+    if (resourceName.endsWith(".pom")) {
+      prefetchJarFile(resourceName);
+    }
+    
     Resource resource = new Resource(resourceName);
     this.fireGetInitiated(resource, destination);
     try {
       this.fireGetStarted(resource, destination);
       InputStream input = getInputStream(resource);
       this.getTransfer(resource, destination, input);
+      
+      // Compute and cache SHA1 for .pom and .jar files
+      if (resourceName.endsWith(".pom") || resourceName.endsWith(".jar")) {
+        String sha1Hash = computeSha1(destination);
+        sha1Cache.put(resourceName, sha1Hash);
+      }
+      
       this.fireGetCompleted(resource, destination);
     } catch (Exception e) {
       this.fireTransferError(resource, e, TransferEvent.REQUEST_GET);
@@ -137,6 +216,94 @@ public final class ArtifactRegistryWagon extends AbstractWagon {
 
   public void setCredentialProvider(CredentialProvider provider) {
     this.credentialProvider = provider;
+  }
+  
+  private String computeSha1(File file) throws TransferFailedException {
+    try {
+      MessageDigest digest = MessageDigest.getInstance("SHA-1");
+      try (FileInputStream fis = new FileInputStream(file)) {
+        byte[] buffer = new byte[8192];
+        int bytesRead;
+        while ((bytesRead = fis.read(buffer)) != -1) {
+          digest.update(buffer, 0, bytesRead);
+        }
+      }
+      byte[] hashBytes = digest.digest();
+      StringBuilder sb = new StringBuilder();
+      for (byte b : hashBytes) {
+        sb.append(String.format("%02x", b));
+      }
+      return sb.toString();
+    } catch (NoSuchAlgorithmException | IOException e) {
+      throw new TransferFailedException("Failed to compute SHA1 hash.", e);
+    }
+  }
+  
+  private void ensureCacheDirectory() {
+    try {
+      Path cacheDir = Paths.get(CACHE_DIR);
+      if (!Files.exists(cacheDir)) {
+        Files.createDirectories(cacheDir);
+      }
+    } catch (IOException e) {
+      System.err.println("Failed to create cache directory: " + e.getMessage());
+    }
+  }
+  
+  private File getCachedJarFile(String jarResourceName) {
+    // Replace path separators with underscores to create a flat file structure
+    String fileName = jarResourceName.replace('/', '_').replace('\\', '_');
+    return new File(CACHE_DIR + fileName);
+  }
+  
+  private void prefetchJarFile(String pomResourceName) {
+    // Convert .pom resource name to .jar resource name
+    if (!pomResourceName.endsWith(".pom")) {
+      return;
+    }
+    
+    String jarResourceName = pomResourceName.substring(0, pomResourceName.length() - 4) + ".jar";
+    File cachedJarFile = getCachedJarFile(jarResourceName);
+    
+    // Skip if already cached
+    if (cachedJarFile.exists()) {
+      return;
+    }
+    
+    jarPrefetchExecutor.submit(() -> {
+      try {
+        ensureCacheDirectory();
+        Resource jarResource = new Resource(jarResourceName);
+        InputStream input = getInputStream(jarResource);
+        
+        // Create temporary file first, then move to final location atomically
+        File tempFile = new File(cachedJarFile.getAbsolutePath() + ".tmp");
+        try (OutputStream out = new java.io.FileOutputStream(tempFile)) {
+          byte[] buffer = new byte[8192];
+          int bytesRead;
+          while ((bytesRead = input.read(buffer)) != -1) {
+            out.write(buffer, 0, bytesRead);
+          }
+        }
+        
+        // Atomically move temp file to final location
+        Files.move(tempFile.toPath(), cachedJarFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+        
+        // Compute and cache SHA1 for the prefetched jar
+        String sha1Hash = computeSha1(cachedJarFile);
+        sha1Cache.put(jarResourceName, sha1Hash);
+        
+        System.out.println("PREFETCHED JAR: " + jarResourceName);
+        
+      } catch (Exception e) {
+        System.err.println("Failed to prefetch jar " + jarResourceName + ": " + e.getMessage());
+        // Clean up any partial files
+        File tempFile = new File(cachedJarFile.getAbsolutePath() + ".tmp");
+        if (tempFile.exists()) {
+          tempFile.delete();
+        }
+      }
+    });
   }
 
   private void handlePutRequest(File source, Resource resource, GenericUrl url)
@@ -240,12 +407,28 @@ public final class ArtifactRegistryWagon extends AbstractWagon {
     }
 
     GenericUrl constructURL(String artifactPath) {
+      if (artifactPath.startsWith("com/bilt/") || artifactPath.startsWith("com/biltrewards/") || artifactPath.startsWith("com/biltcard/")) {        
+        GenericUrl url = new GenericUrl();
+        url.setScheme("https");
+        url.setHost(repository.getHost());
+        url.appendRawPath("/single-scholar-280421/bilt-maven");
+        url.appendRawPath("/");
+        url.appendRawPath(artifactPath);
+        return url;
+      }
+
       GenericUrl url = new GenericUrl();
       url.setScheme("https");
-      url.setHost(repository.getHost());
-      url.appendRawPath(repository.getBasedir());
-      url.appendRawPath("/");
-      url.appendRawPath(artifactPath);
+      url.setHost("artifactregistry.googleapis.com");
+      url.appendRawPath("/download/v1/projects/single-scholar-280421/locations/us/repositories/maven-central-cache/files/");
+      try {
+        url.appendRawPath(URLEncoder.encode(artifactPath, "UTF-8"));
+      } catch (UnsupportedEncodingException e) {
+        // UTF-8 is always supported, this should never happen
+        throw new RuntimeException("UTF-8 encoding not supported", e);
+      }
+      url.appendRawPath(":download");
+      url.set("alt", "media");
       return url;
     }
   }
