@@ -35,9 +35,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
-
 import org.apache.maven.wagon.AbstractWagon;
 import org.apache.maven.wagon.ConnectionException;
 import org.apache.maven.wagon.ResourceDoesNotExistException;
@@ -62,7 +59,6 @@ public final class ArtifactRegistryWagon extends AbstractWagon {
       throws TransferFailedException, ResourceDoesNotExistException, AuthorizationException {
     try {
       GenericUrl url = googleRepository.constructURL(resource.getName());
-      System.out.println(url);
       HttpRequest request = requestFactory.buildGetRequest(url);
       HttpResponse response = request.execute();
       return response.getContent();
@@ -244,28 +240,12 @@ public final class ArtifactRegistryWagon extends AbstractWagon {
     }
 
     GenericUrl constructURL(String artifactPath) {
-      if (artifactPath.startsWith("com/bilt/") || artifactPath.startsWith("com/biltrewards/") || artifactPath.startsWith("com/biltcard/")) {        
-        GenericUrl url = new GenericUrl();
-        url.setScheme("https");
-        url.setHost(repository.getHost());
-        url.appendRawPath("/single-scholar-280421/bilt-maven");
-        url.appendRawPath("/");
-        url.appendRawPath(artifactPath);
-        return url;
-      }
-
       GenericUrl url = new GenericUrl();
       url.setScheme("https");
-      url.setHost("artifactregistry.googleapis.com");
-      url.appendRawPath("/download/v1/projects/single-scholar-280421/locations/us/repositories/maven-central-cache/files/");
-      try {
-        url.appendRawPath(URLEncoder.encode(artifactPath, "UTF-8"));
-      } catch (UnsupportedEncodingException e) {
-        // UTF-8 is always supported, this should never happen
-        throw new RuntimeException("UTF-8 encoding not supported", e);
-      }
-      url.appendRawPath(":download");
-      url.set("alt", "media");
+      url.setHost(repository.getHost());
+      url.appendRawPath(repository.getBasedir());
+      url.appendRawPath("/");
+      url.appendRawPath(artifactPath);
       return url;
     }
   }
