@@ -33,15 +33,15 @@ EXTENSIONS_XML="
 </extensions>
 "
 
-SETTINGS_XML="
-<?xml version='1.0' encoding='UTF-8'?>
-<settings xmlns='http://maven.apache.org/SETTINGS/1.0.0'
-          xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance'
-          xsi:schemaLocation='http://maven.apache.org/SETTINGS/1.0.0 
-                              http://maven.apache.org/xsd/settings-1.0.0.xsd'>
+# SETTINGS_XML="
+# <?xml version='1.0' encoding='UTF-8'?>
+# <settings xmlns='http://maven.apache.org/SETTINGS/1.0.0'
+#           xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance'
+#           xsi:schemaLocation='http://maven.apache.org/SETTINGS/1.0.0 
+#                               http://maven.apache.org/xsd/settings-1.0.0.xsd'>
 
-</settings>
-"
+# </settings>
+# "
 
 # SETTINGS_XML="
 # <?xml version='1.0' encoding='UTF-8'?>
@@ -74,47 +74,47 @@ SETTINGS_XML="
 # </settings>
 # "
 
-# SETTINGS_XML="
-# <?xml version='1.0' encoding='UTF-8'?>
-# <settings xmlns='http://maven.apache.org/SETTINGS/1.0.0'
-#           xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance'
-#           xsi:schemaLocation='http://maven.apache.org/SETTINGS/1.0.0 
-#                               http://maven.apache.org/xsd/settings-1.0.0.xsd'>
+SETTINGS_XML="
+<?xml version='1.0' encoding='UTF-8'?>
+<settings xmlns='http://maven.apache.org/SETTINGS/1.0.0'
+          xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance'
+          xsi:schemaLocation='http://maven.apache.org/SETTINGS/1.0.0 
+                              http://maven.apache.org/xsd/settings-1.0.0.xsd'>
 
-#   <profiles>
-#     <profile>
-#       <id>custom-repos</id>
-#       <repositories>
-#         <repository>
-#           <id>maven-central</id>
-#           <url>https://repo.maven.apache.org/maven2</url>
-#           <snapshots>
-#             <enabled>false</enabled>
-#           </snapshots>
-#         </repository>
-#         <repository>
-#           <id>bilt-maven</id>
-#           <url>artifactregistry://us-maven.pkg.dev/single-scholar-280421/bilt-maven</url>
-#           <snapshots>
-#             <enabled>true</enabled>
-#           </snapshots>
-#         </repository>
-#         <repository>
-#           <id>central-cache</id>
-#           <url>artifactregistry://us-maven.pkg.dev/single-scholar-280421/maven-central-cache</url>
-#           <snapshots>
-#             <enabled>false</enabled>
-#           </snapshots>
-#         </repository>
-#       </repositories>
-#     </profile>
-#   </profiles>
+  <profiles>
+    <profile>
+      <id>custom-repos</id>
+      <repositories>
+        <repository>
+          <id>maven-central</id>
+          <url>https://repo.maven.apache.org/maven2</url>
+          <snapshots>
+            <enabled>false</enabled>
+          </snapshots>
+        </repository>
+        <repository>
+          <id>bilt-maven</id>
+          <url>artifactregistry://us-maven.pkg.dev/single-scholar-280421/bilt-maven</url>
+          <snapshots>
+            <enabled>true</enabled>
+          </snapshots>
+        </repository>
+        <repository>
+          <id>central-cache</id>
+          <url>artifactregistry://us-maven.pkg.dev/single-scholar-280421/maven-central-cache</url>
+          <snapshots>
+            <enabled>false</enabled>
+          </snapshots>
+        </repository>
+      </repositories>
+    </profile>
+  </profiles>
 
-#   <activeProfiles>
-#     <activeProfile>custom-repos</activeProfile>
-#   </activeProfiles>
-# </settings>
-# "
+  <activeProfiles>
+    <activeProfile>custom-repos</activeProfile>
+  </activeProfiles>
+</settings>
+"
 
 ###########################################################################
 ##### END CONFIG
